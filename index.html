@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Bíblico</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #ff9966, #ff5e62);
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 90%;
+            width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #d35400;
+        }
+        button {
+            width: 100%;
+            max-width: 300px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        .hidden {
+            display: none;
+        }
+        .stats {
+            margin-top: 15px;
+            font-size: 1rem;
+            background: #f1c40f;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            button { font-size: 1rem; padding: 8px; }
+            .stats { font-size: 0.9rem; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Juego Bíblico 📖</h1>
+        <div id="registro">
+            <p>Jugador 1: <input type="text" id="jugador1"></p>
+            <p>Jugador 2: <input type="text" id="jugador2"></p>
+            <button onclick="iniciarJuego()">Iniciar Juego</button>
+        </div>
+
+        <div id="juego" class="hidden">
+            <h2 id="turnoJugador"></h2>
+            <p id="pregunta"></p>
+            <div id="opciones"></div>
+            <p class="stats">Pregunta <span id="numPregunta">1</span> de 5</p>
+            <p class="stats">
+                <span id="statsJugador1"></span> | 
+                <span id="statsJugador2"></span>
+            </p>
+        </div>
+
+        <div id="resultado" class="hidden">
+            <h2 id="ganador"></h2>
+            <p id="puntajes"></p>
+            <p id="mensaje"></p>
+            <button onclick="location.reload()">Jugar de nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        let preguntas = [
+            { pregunta: "¿Quién construyó el arca?", opciones: ["Moisés", "Noé", "Abraham", "David"], respuesta: "Noé" },
+            { pregunta: "¿En qué ciudad nació Jesús?", opciones: ["Jerusalén", "Belén", "Nazaret", "Cafarnaúm"], respuesta: "Belén" },
+            { pregunta: "¿Cuántos discípulos tenía Jesús?", opciones: ["10", "12", "14", "7"], respuesta: "12" },
+            { pregunta: "¿Quién abrió el Mar Rojo?", opciones: ["Elías", "Moisés", "Josué", "Pedro"], respuesta: "Moisés" },
+            { pregunta: "¿Cuál es el primer libro de la Biblia?", opciones: ["Éxodo", "Salmos", "Génesis", "Mateo"], respuesta: "Génesis" }
+        ];
+
+        let jugador1, jugador2, turno, puntajes, errores, preguntasDisponibles, numPregunta;
+
+        function iniciarJuego() {
+            jugador1 = document.getElementById("jugador1").value || "Jugador 1";
+            jugador2 = document.getElementById("jugador2").value || "Jugador 2";
+            turno = 0;
+            puntajes = [0, 0];
+            errores = [0, 0];
+            preguntasDisponibles = [...preguntas];
+            numPregunta = 1;
+
+            document.getElementById("registro").classList.add("hidden");
+            document.getElementById("juego").classList.remove("hidden");
+
+            actualizarEstadisticas();
+            mostrarPregunta();
+        }
+
+        function mostrarPregunta() {
+            if (preguntasDisponibles.length === 0) {
+                mostrarResultados();
+                return;
+            }
+
+            let indicePregunta = Math.floor(Math.random() * preguntasDisponibles.length);
+            let preguntaSeleccionada = preguntasDisponibles.splice(indicePregunta, 1)[0];
+
+            document.getElementById("turnoJugador").innerText = `Turno para ${turno === 0 ? jugador1 : jugador2}`;
+            document.getElementById("pregunta").innerText = preguntaSeleccionada.pregunta;
+            document.getElementById("numPregunta").innerText = numPregunta;
+
+            let opcionesHTML = "";
+            preguntaSeleccionada.opciones.forEach(opcion => {
+                opcionesHTML += `<button onclick="verificarRespuesta(this, '${opcion}', '${preguntaSeleccionada.respuesta}')">${opcion}</button>`;
+            });
+
+            document.getElementById("opciones").innerHTML = opcionesHTML;
+        }
+
+        function verificarRespuesta(boton, opcionSeleccionada, respuestaCorrecta) {
+            let botones = document.querySelectorAll("#opciones button");
+            botones.forEach(b => b.disabled = true);
+
+            if (opcionSeleccionada === respuestaCorrecta) {
+                alert("¡Correcto!");
+                puntajes[turno]++;
+            } else {
+                alert("Incorrecto. La respuesta correcta es: " + respuestaCorrecta);
+                errores[turno]++;
+            }
+
+            turno = (turno + 1) % 2;
+            numPregunta++;
+
+            actualizarEstadisticas();
+            setTimeout(mostrarPregunta, 1000);
+        }
+
+        function actualizarEstadisticas() {
+            document.getElementById("statsJugador1").innerText = `${jugador1} - Aciertos: ${puntajes[0]} | Errores: ${errores[0]}`;
+            document.getElementById("statsJugador2").innerText = `${jugador2} - Aciertos: ${puntajes[1]} | Errores: ${errores[1]}`;
+        }
+
+        function mostrarResultados() {
+            document.getElementById("juego").classList.add("hidden");
+            document.getElementById("resultado").classList.remove("hidden");
+
+            let mensaje;
+            if (puntajes[0] > puntajes[1]) {
+                mensaje = `${jugador1} es el ganador 🎉`;
+            } else if (puntajes[1] > puntajes[0]) {
+                mensaje = `${jugador2} es el ganador 🎉`;
+            } else {
+                mensaje = "¡Es un empate!";
+            }
+
+            let recomendacion = puntajes[0] < puntajes[1] ? `${jugador1}, sigue estudiando la Biblia y mejorarás.` : 
+                                puntajes[1] < puntajes[0] ? `${jugador2}, sigue estudiando la Biblia y mejorarás.` : "";
+
+            document.getElementById("ganador").innerText = mensaje;
+            document.getElementById("puntajes").innerText = `${jugador1}: ${puntajes[0]} puntos | ${jugador2}: ${puntajes[1]} puntos`;
+            document.getElementById("mensaje").innerText = recomendacion;
+        }
+    </script>
+
+</body>
+</html>
